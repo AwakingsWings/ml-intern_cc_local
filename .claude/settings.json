@@ -27,11 +27,11 @@
     ]
   },
   "env": {
-    "ML_INTERN_SAVE_SESSIONS": "1",
+    "ML_INTERN_SAVE_SESSIONS": "0",
     "ML_INTERN_SESSION_REPO": "smolagents/ml-intern-sessions",
     "ML_INTERN_CONFIRM_CPU_JOBS": "1",
     "ML_INTERN_YOLO": "0",
-    "ML_INTERN_LOCAL_MODE": "0"
+    "ML_INTERN_LOCAL_MODE": "1"
   },
   "hooks": {
     "SessionStart": [

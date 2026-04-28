@@ -5,6 +5,8 @@ argument-hint: <description of the job to run>
 
 Submit an HF Job for: $ARGUMENTS
 
+**This command is the explicit cloud-training opt-in.** Local training is the default for this project — for local runs, use `/finetune` or `/ml-intern` instead. Only proceed here when the user genuinely wants HF Jobs (cloud GPU billed to their HF account).
+
 Before calling `mcp__ml-intern-tools__hf_jobs`, produce the pre-flight check below. **Do not call `hf_jobs` until every line is filled in.** If you cannot fill a line, complete the missing step (research, dataset inspection, sandbox test) first.
 
 ```

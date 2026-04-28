@@ -1,9 +1,11 @@
 ---
-description: Fine-tune a model on a dataset, end-to-end (research → validate → train → push).
+description: Fine-tune a model on a dataset, end-to-end (research → validate → train locally).
 argument-hint: <natural language task, e.g. "llama-3-8b on HuggingFaceH4/ultrachat_200k">
 ---
 
 Fine-tune the model described in: $ARGUMENTS
+
+**Default mode: local training on the user's GPU.** Only switch to HF Jobs if the user explicitly asks ("submit to HF Jobs", "run on the cloud", etc.) — see step 5b.
 
 Fine-tuning is never trivial. Follow this sequence in order. Do **not** skip steps even if the request looks simple — `CLAUDE.md` lists the specific failures that happen when you do.
 
@@ -14,34 +16,40 @@ Fine-tuning is never trivial. Follow this sequence in order. Do **not** skip ste
 
 Do not start writing code until the subagent returns.
 
-**2. Validate dataset and model.** Independently of the research output, run:
+**2. Validate dataset, model, and local hardware.**
 - `mcp__ml-intern-tools__hf_inspect_dataset` on the target dataset — confirm columns match the chosen training method (SFT: `messages`/`text`/`prompt`+`completion`; DPO: `prompt`+`chosen`+`rejected`; GRPO: `prompt`).
 - `mcp__ml-intern-tools__hf_repo_files` on the target model — confirm it exists and note tokenizer/architecture.
+- `nvidia-smi` (via `Bash`) — record GPU model and total VRAM. Use this to size `per_device_train_batch_size`, `max_length`, and decide if the model+config fits.
 
-**3. Develop in a sandbox.** For non-trivial scripts, call `mcp__ml-intern-tools__sandbox_create` with a GPU flavor (`t4-small` minimum if the code touches CUDA/bf16/model loading). Write the script, install deps, run a tiny smoke test (1–2 steps), fix errors. Do not skip the smoke test.
+**3. Write the training script locally.** Create `./outputs/<run_name>/train.py` (or `./train.py` for one-off runs). Use the recipe from step 1; size for the GPU from step 2. Required logging settings: `disable_tqdm=True, logging_strategy="steps", logging_first_step=True`. Set `output_dir=./outputs/<run_name>/`.
 
-**4. Pre-flight check (mandatory output before `hf_jobs`).** Print this checklist and verify every line is filled:
+**4. Smoke test (mandatory before full run).** Run `python train.py --max-steps 5` (or set `max_steps=5` in config). Confirm:
+- Imports load (no `ModuleNotFoundError`, no API mismatches with the installed library versions).
+- Dataset reads and the first batch is shaped as expected.
+- Two or three training steps complete with plain-text loss values printed.
+
+If the smoke test errors, fix it. Do not advance to step 5.
+
+**5a. Pre-flight (local, default).** Print this checklist and verify every line:
 
 ```
 Reference implementation: <path or arxiv ID from research>
 Dataset format verified:  <columns confirmed via hf_inspect_dataset>
 Training method:          <SFT | DPO | GRPO | ...>
 Hyperparameters:          <lr, schedule, epochs, batch size, max_length>
-push_to_hub:              True
-hub_model_id:             <org/name>
-hardware_flavor:          <from sizing table in CLAUDE.md>
-timeout:                  <≥ 2h for any training>
-Trackio monitoring:       <project name + dashboard URL>
+Local GPU:                <nvidia-smi: model, total VRAM>
+Output dir:               ./outputs/<run_name>/
+push_to_hub:              <False (local), or True + hub_model_id if user asked>
 disable_tqdm=True, logging_strategy="steps", logging_first_step=True: yes
+Smoke test passed:        yes
 ```
 
-If any line is missing, **stop and complete it** before submitting.
+Then launch: `python train.py` via the `Bash` tool. Stream stdout — don't background unless the user asks. Watch for plain-text loss progressing.
 
-**5. Submit ONE job.** Call `mcp__ml-intern-tools__hf_jobs` (operation `run` or `uv`) with the verified config. Watch the first 60s of logs to confirm training started (loss values printing as plain text, not stuck on tokenizer/model load). Only then submit any sweep/ablation runs.
+**5b. Pre-flight (HF Jobs, opt-in).** Only if the user explicitly asked for cloud training. See "Cloud training (HF Jobs, opt-in)" in `CLAUDE.md` for the full HF Jobs pre-flight checklist (`push_to_hub=True`, `hub_model_id`, `hardware_flavor`, `timeout >= 2h`, Trackio). Then call `mcp__ml-intern-tools__hf_jobs` with the verified config; watch the first 60s of logs.
 
 **6. Report.** Provide:
-- Direct Hub URL of the job (`https://huggingface.co/jobs/...`)
-- Trackio dashboard URL
-- Hub URL of the model that will appear on completion (`https://huggingface.co/<hub_model_id>`)
+- Local mode: path to the saved model under `./outputs/<run_name>/`, final loss / eval metrics, training time.
+- HF Jobs mode: Job URL, Trackio dashboard URL, Hub URL of the model that will appear on completion.
 
 If anything fails, do not silently switch training methods, reduce `max_length`, or substitute datasets. Diagnose, fix the minimal thing, or ask the user.
