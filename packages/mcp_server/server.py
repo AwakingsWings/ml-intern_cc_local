@@ -1,9 +1,9 @@
 """
-ML Intern tools, exposed as an MCP server for Claude Code.
+ML Intern tools, exposed as an MCP server for project-mode agents.
 
 Thin shim over agent/tools/*: same handlers, same JSON schemas, same
 behavior — only the transport changes from "litellm tool calls inside
-agent_loop.py" to "MCP stdio for Claude Code".
+agent_loop.py" to MCP stdio for hosts such as Claude Code and OpenCode.
 
 Uses the low-level `mcp.server.lowlevel.Server` API so we can register
 tools with the original JSON schemas verbatim. FastMCP's high-level
@@ -11,7 +11,7 @@ tools with the original JSON schemas verbatim. FastMCP's high-level
 lose nullable/oneOf/operation-discriminated structures the existing
 ml-intern specs encode.
 
-Run via the `.mcp.json` at the repo root. Not intended to be invoked manually.
+Run via the `.mcp.json` or `opencode.jsonc` at the repo root. Not intended to be invoked manually.
 """
 
 from __future__ import annotations
@@ -59,8 +59,8 @@ from agent.tools.sandbox_tool import get_sandbox_tools
 logger = logging.getLogger(__name__)
 
 # `research` and `plan_tool` are intentionally NOT exposed:
-#   research → replaced by .claude/agents/research.md (Claude Code subagent)
-#   plan_tool → replaced by Claude Code's built-in TodoWrite
+#   research → replaced by project subagents such as .opencode/agents/research.md
+#   plan_tool → replaced by the host agent's native planning/todo tool
 _TOOL_SPECS: list[tuple[dict[str, Any], Callable[..., Awaitable[tuple[str, bool]]]]] = [
     (EXPLORE_HF_DOCS_TOOL_SPEC, explore_hf_docs_handler),
     (HF_DOCS_FETCH_TOOL_SPEC, hf_docs_fetch_handler),

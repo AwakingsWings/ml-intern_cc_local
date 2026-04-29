@@ -54,9 +54,22 @@ ml-intern --max-iterations 100 "your prompt"
 ml-intern --no-stream "your prompt"
 ```
 
+### Running inside OpenCode
+
+This branch also runs as an OpenCode project. From the repo root:
+
+```bash
+opencode                                      # interactive
+opencode run "fine-tune llama on my dataset"  # headless
+```
+
+OpenCode picks up `AGENTS.md` (persona and workflow), `opencode.jsonc` (HF tools via `packages/mcp_server`), `.opencode/agents/research.md` (research subagent), `.opencode/commands/*.md` (slash commands: `/ml-intern`, `/research`, `/inspect-dataset`, `/finetune`, `/run-job`), and `.opencode/plugins/ml-intern-env.js` (local ml-intern defaults). The standalone CLI under `agent/` is unchanged; all runtimes share the same tool implementations.
+
+See [`OPENCODE_GUIDE.md`](OPENCODE_GUIDE.md) for setup, slash commands, permissions, env knobs, and troubleshooting.
+
 ### Running inside Claude Code
 
-The repo also runs as a Claude Code project. From the repo root:
+The original Claude Code project mode is still supported. From the repo root:
 
 ```bash
 claude                                          # interactive

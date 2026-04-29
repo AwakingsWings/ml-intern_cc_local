@@ -74,6 +74,11 @@ skills/
 # ML / Data
 data/
 datasets/
+outputs/
+yolov8n.pt
+.opencode/runs/
+.opencode/node_modules/
+.opencode/tasks/
 models/
 checkpoint-*/
 runs/

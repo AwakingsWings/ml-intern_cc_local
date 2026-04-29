@@ -1,0 +1,69 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Keep ml-intern local-first. OpenCode substitutes {env:VAR}; missing
+  // environment variables become empty strings.
+  "mcp": {
+    "mlintern": {
+      "type": "local",
+      "command": [
+        "uv",
+        "run",
+        "--project",
+        ".",
+        "python",
+        "-m",
+        "packages.mcp_server.server"
+      ],
+      "enabled": true,
+      "timeout": 15000,
+      "environment": {
+        "HF_TOKEN": "{env:HF_TOKEN}",
+        "GITHUB_TOKEN": "{env:GITHUB_TOKEN}",
+        "ML_INTERN_LOCAL_MODE": "1",
+        "ML_INTERN_CONFIRM_CPU_JOBS": "{env:ML_INTERN_CONFIRM_CPU_JOBS}",
+        "ML_INTERN_YOLO": "{env:ML_INTERN_YOLO}"
+      }
+    },
+    "hf": {
+      "type": "remote",
+      "url": "https://huggingface.co/mcp?login",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {env:HF_TOKEN}"
+      }
+    }
+  },
+
+  // Conservative equivalent of the Claude Code pre-tool approval hook.
+  // OpenCode permissions are static; content-aware GPU/CPU distinctions are
+  // documented in AGENTS.md and the /run-job command.
+  "permission": {
+    "bash": {
+      "nvidia-smi*": "allow",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "python *": "ask",
+      "uv *": "ask",
+      "*": "ask"
+    },
+    "edit": "ask",
+    "task": {
+      "research": "allow",
+      "*": "ask"
+    },
+    "mlintern_hf_jobs": "ask",
+    "mlintern_sandbox_create": "deny",
+    "mlintern_hf_repo_files": "ask",
+    "mlintern_hf_repo_git": "ask"
+  },
+
+  "watcher": {
+    "ignore": [
+      ".venv/**",
+      "outputs/**",
+      "frontend/node_modules/**",
+      ".git/**"
+    ]
+  }
+}
